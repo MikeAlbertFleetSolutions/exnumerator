@@ -19,11 +19,16 @@ defmodule Exnumerator.KeywordListEnum do
     end
   end
 
+  # when a string key, convert to atom
   defp atom_term(term)
-       when is_binary(term),
-       do: String.to_atom(term)
+      when is_binary(term),
+      do: String.to_atom(term)
 
-  defp atom_term(term), do: term
+  # when an atom key, return
+  defp atom_term(term) when is_atom(term), do: term
+
+  # all others are invalid and should be omitted / made nil
+  defp atom_term(_term), do: nil
 
   defp find_value(values, term) do
     with {key, _value} <- key_by_value(values, term), do: {:ok, key}

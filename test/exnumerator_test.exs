@@ -4,6 +4,10 @@ defmodule ExnumeratorTest do
   @values_strings ["sent", "read", "received", "delivered"]
   @values_atoms [:sent, :read, :received, :delivered]
   @values_keywords [sent: "S", read: "READ", received: "R", delivered: "D"]
+  # in some scenerios the enumeration is backed by a "codes" table that resolved to an integer
+  # (i.e. a ORDERS table with a column of ORDER_STATUS_ID that maps to the ORDER_STATUSES table)
+  # it's very convenient to support building a enumeration against integer values in this case
+  @int_valued_keywords [sent: 1, read: 2, received: 3, delivered: 4]
 
   defmodule MessageAsString do
     use Exnumerator, values: ["sent", "read", "received", "delivered"]
@@ -15,6 +19,10 @@ defmodule ExnumeratorTest do
 
   defmodule MessageAsKeywords do
     use Exnumerator, values: [sent: "S", read: "READ", received: "R", delivered: "D"]
+  end
+
+  defmodule IntValuedKeywords do
+    use Exnumerator, values: [sent: 1, read: 2, received: 3, delivered: 4]
   end
 
   describe "MessageAsString" do
@@ -56,6 +64,20 @@ defmodule ExnumeratorTest do
 
     test "should return the first value" do
       assert MessageAsKeywords.first() == List.first(@values_keywords)
+    end
+  end
+
+  describe "IntValuedKeywords" do
+    test "should store given values" do
+      assert IntValuedKeywords.values() == @int_valued_keywords
+    end
+
+    test "should return a random value" do
+      assert IntValuedKeywords.sample() in @int_valued_keywords
+    end
+
+    test "should return the first value" do
+      assert IntValuedKeywords.first() == List.first(@int_valued_keywords)
     end
   end
 
@@ -142,6 +164,45 @@ defmodule ExnumeratorTest do
       assert MessageAsKeywords.load("S") == {:ok, :sent}
       assert MessageAsKeywords.load(:sent) == :error
       assert MessageAsKeywords.load("sent") == :error
+    end
+  end
+
+
+  describe "int values in keyword list (MessageAsKeywords)" do
+    test "should store given values" do
+      assert IntValuedKeywords.values() == @int_valued_keywords
+    end
+
+    test "should return a random value" do
+      assert IntValuedKeywords.sample() in @int_valued_keywords
+    end
+
+    test "should cast atom, string, or raw value" do
+      assert IntValuedKeywords.cast(:sent) == {:ok, :sent}
+      assert IntValuedKeywords.cast("sent") == {:ok, :sent}
+      assert IntValuedKeywords.cast(1) == {:ok, :sent}
+    end
+
+    test "should not cast non-whitelisted values" do
+      assert IntValuedKeywords.cast(:invalid) == :error
+      assert IntValuedKeywords.cast("invalid") == :error
+    end
+
+    test "should dump atom, string, or raw value" do
+      assert IntValuedKeywords.dump(:sent) == {:ok, 1}
+      assert IntValuedKeywords.dump("sent") == {:ok, 1}
+      assert IntValuedKeywords.dump(1) == {:ok, 1}
+    end
+
+    test "should not dump non-whitelisted values" do
+      assert IntValuedKeywords.dump(:invalid) == :error
+      assert IntValuedKeywords.dump("invalid") == :error
+    end
+
+    test "should load only the raw value" do
+      assert IntValuedKeywords.load(1) == {:ok, :sent}
+      assert IntValuedKeywords.load(:sent) == :error
+      assert IntValuedKeywords.load("sent") == :error
     end
   end
 end
