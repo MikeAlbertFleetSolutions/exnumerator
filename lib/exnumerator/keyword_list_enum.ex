@@ -34,8 +34,27 @@ defmodule Exnumerator.KeywordListEnum do
     with {key, _value} <- key_by_value(values, term), do: {:ok, key}
   end
 
-  defp key_by_value(values, term), do: Enum.find(values, :error, &matching(term, &1))
+  defp key_by_value(values, term) do
+    if is_binary(term) and is_integer_string?(term) and all_integers?(values) do
+      Enum.find(values, :error, &matching(String.to_integer(term), &1))
+    else
+      Enum.find(values, :error, &matching(term, &1))
+    end
+  end
 
   defp matching(term, {_key, term}), do: true
   defp matching(_term, _tuple), do: false
+
+  defp all_integers?(values) do
+    values
+    |> Keyword.values
+    |> Enum.all?(fn(x) -> is_integer(x) end)
+  end
+
+  defp is_integer_string?(term) do
+    case Integer.parse(term) do
+      {_num, ""} -> true
+      _ -> false
+    end
+  end
 end

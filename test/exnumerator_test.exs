@@ -204,5 +204,9 @@ defmodule ExnumeratorTest do
       assert IntValuedKeywords.load(:sent) == :error
       assert IntValuedKeywords.load("sent") == :error
     end
+
+    test "should detect a number string matching up to a set of integer values and cast them" do
+      assert IntValuedKeywords.load("1") == {:ok, :sent}
+    end
   end
 end
